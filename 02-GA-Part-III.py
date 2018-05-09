@@ -13,9 +13,9 @@
 import random
 import time
 from copy import deepcopy
-import fitnessFunction28 as ff # Fitness Function and Parameters
+import fitnessFunction16 as ff # Fitness Function and Parameters
 
-
+execs=input("Enter number of executions: ")
 startTime = time.time()
 
 #-------------------------------------------------------------
@@ -35,8 +35,7 @@ maxFunEval  = 10000000    # Maximum allowable function evaluations
 funEval	    = 0		# Count function evaluations
 bestFitness = 99999999  # Store Best Fitness Value
 bestChromosome = []     # Store Best Chromosome
-
-
+bestFitnessesList = []
 # 2.3 Result Saving Parameters
 resultFileName="result_"+algoName+"_"+ff.Name+".csv"
 
@@ -69,6 +68,7 @@ def Init():
         funEval = funEval + 1
         newIndividual = Individual(chromosome,fitness)
         pop.append(newIndividual)
+    
         
 
 # Function 3: Remember Global BEST in the pop;
@@ -147,43 +147,72 @@ def Mutation():
                 pop[r].fitness=cFitness
                 pop[r].chromosome=c
   
+def ForgetGlobalBest():
+	global pop, bestFitness, bestChromosome
+	pop = []
+	bestFitness = 99999999
+	bestChromosome = []
+
+def mean():
+	global bestFitnessesList
+	total=0.0
+	for entry in bestFitnessesList:
+		total+=entry
+	return total/len(bestFitnessesList)
+
+def std_dev(mean):
+	global bestFitnessesList
+	total=0.0
+	for entry in bestFitnessesList:
+		total+=(entry-mean)*(entry-mean)
+	return total/len(bestFitnessesList)
 
 #-------------------------------------------------------------
 # Step 4: Start Program
 #-------------------------------------------------------------
+fp=open(resultFileName,"w")
 Init()
-globalBest=pop[0].chromosome
-globalBestFitness=pop[0].fitness
-MemoriseGlobalBest()
+popInit=pop[0].chromosome
+for instance in range(execs):
+	ForgetGlobalBest()
+	Init()
+	#print bestFitness, bestChromosome
+	globalBest=pop[0].chromosome
+	globalBestFitness=pop[0].fitness
+	MemoriseGlobalBest()
 
-# Saving Result
-fp=open(resultFileName,"w");
-fp.write("Iteration,Fitness,Chromosomes\n")
-
-for i in range(0,iterations):
-    Crossover()
-    Mutation()
-    MemoriseGlobalBest()
+	# Saving Result
+	fp.write("New execution instance\n")
+	fp.write("Iteration,Fitness,Chromosomes\n")
 	
-    if funEval >=maxFunEval:
-        break
+	for i in range(0,iterations):
+	    Crossover()
+	    Mutation()
+	    MemoriseGlobalBest()
+		
+	    if funEval >=maxFunEval:
+	        break
+	
+	    if i%100==0:
+	        print "I:",i,"\t Fitness:", bestFitness
+	        fp.write(str(i) + "," + str(bestFitness) + "," + str(bestChromosome) + "\n")
+	
+	print "I:",i+1,"\t Fitness:", bestFitness
+	bestFitnessesList.append(bestFitness)
+	fp.write(str(i+1) + "," + str(bestFitness) + "," + str(bestChromosome))
+	fp.write("\n\n")
 
-    if i%100==0:
-        print "I:",i,"\t Fitness:", bestFitness
-        fp.write(str(i) + "," + str(bestFitness) + "," + str(bestChromosome) + "\n")
+	print "Done"
+	print "\nBestFitness:", bestFitness
+	print "Best chromosome:", bestChromosome
+	print "Total Function funEval: ",funEval
+	print "Result is saved in", resultFileName
+	print "Total Time Taken: ", round(time.time() - startTime,2), " sec\n"
 
-print "I:",i+1,"\t Fitness:", bestFitness
-fp.write(str(i+1) + "," + str(bestFitness) + "," + str(bestChromosome))    
 fp.close()
-
-print "Done"
-print "\nBestFitness:", bestFitness
-print "Best chromosome:", bestChromosome
-print "Total Function funEval: ",funEval
-print "Result is saved in", resultFileName
-print "Total Time Taken: ", round(time.time() - startTime,2), " sec\n"
-
-
+calculatedMean=mean()
+print "Mean of best fitnesses = ",calculatedMean
+print "Standard deviation of best fitnesses = ",std_dev(calculatedMean)
 
 
 
